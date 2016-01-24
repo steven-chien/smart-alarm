@@ -17,17 +17,25 @@
  */
 #include <thread>
 #include <ctime>
+#include <pthread.h>
+#include <SFML/Audio.hpp>
 
 class Alarm
 {
-	public:
+	private:
+		pthread_t thread;
+		bool thread_state;
+		sf::SoundBuffer buffer;
+		sf::Sound sound;
+		pthread_spinlock_t lock;
 		time_t wake_time;
 		time_t sleep_period;
 		time_t start_time;
-		std::thread thread;
+		static void *wake(void*);
+	public:
 		Alarm(time_t);
 		~Alarm();
-		static void wake(Alarm*);
 		void start();
 		void stop();
+		void set(time_t);
 };

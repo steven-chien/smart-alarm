@@ -18,14 +18,28 @@
 
 #include <iostream>
 #include <unistd.h>
-#include "alarm.hpp"
+#include "Alarm.hpp"
 
 int main(int argc, char *argv[])
 {
 	std::cout << "hello" << std::endl;
 	time_t now;
 	time(&now);
-	Alarm *alarm = new Alarm(now+12);
+	Alarm *alarm = new Alarm(now+5);
 	alarm->start();
-	sleep(15);
+	sleep(8);
+	alarm->stop();
+	sleep(3);
+	time(&now);
+	alarm->set(now+3);
+	alarm->start();
+	sleep(6);
+	alarm->stop();
+	sleep(1);
+	time(&now);
+	alarm->set(now+5);
+	alarm->start();
+	sleep(10);
+	alarm->stop();
+	delete alarm;
 }
