@@ -15,6 +15,9 @@
  *
  * =====================================================================================
  */
+#ifndef __ALARM_HPP__
+#define __ALARM_HPP__
+
 #include <thread>
 #include <ctime>
 #include <pthread.h>
@@ -28,6 +31,7 @@ class Alarm
 		sf::SoundBuffer buffer;
 		sf::Sound sound;
 		pthread_spinlock_t lock;
+		long int id;
 		time_t wake_time;
 		time_t sleep_period;
 		time_t start_time;
@@ -37,5 +41,8 @@ class Alarm
 		~Alarm();
 		void start();
 		void stop();
+		void terminate();
 		void set(time_t);
 };
+
+#endif

@@ -27,6 +27,7 @@
 Alarm::Alarm(time_t ring)
 {
 	thread_state = false;
+	id = ring;
 	wake_time = ring;
 	pthread_spin_init(&lock, PTHREAD_PROCESS_PRIVATE);
 	if (!buffer.loadFromFile("ringtone.ogg"))
@@ -47,28 +48,44 @@ void *Alarm::wake(void *args)
 {
 	Alarm *alarm = (Alarm*)args;
 
-	struct timespec sleep;
-	sleep.tv_sec = alarm->wake_time;
-	sleep.tv_nsec = 0;
+	while(true) {
+		/* prepare for sleep */
+		struct timespec sleep;
+		sleep.tv_sec = alarm->wake_time;
+		sleep.tv_nsec = 0;
 
-	clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &sleep, NULL);
-	std::cout << "ringing..." << std::endl;
-	alarm->sound.play();
-	pthread_spin_lock(&(alarm->lock));
-	pthread_spin_unlock(&(alarm->lock));
-//	while(alarm->thread_state);
+		/* sleep */
+		std::cout << "going to sleep: " << sleep.tv_sec << std::endl;
+		clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &sleep, NULL);
+
+		/* sleep period ended, start ringing and wait for unlock */
+		std::cout << "ringing..." << std::endl;
+		alarm->sound.play();
+		pthread_spin_lock(&(alarm->lock));
+
+		/* unlocked, stop ringing and schedule for next wakeup */
+		alarm->sound.stop();
+		time_t now;
+		time(&now);
+		alarm->wake_time = now + 5;
+	}
 	return NULL;
 }
 
 void Alarm::start()
 {
+	std::cout << "hello" << std::endl;
+	/* do not start if thread already started */
 	if(!thread_state) {
+		/* define sleep period */
 		time(&start_time);
 		sleep_period = wake_time - start_time;
 
+		/* configure alarm ringtone */
 		sound.setBuffer(buffer);
 		sound.setLoop(true);
 
+		/* lock spin lock and start thread */
 		pthread_spin_lock(&lock);
 		pthread_create(&thread, NULL, wake, this);
 		thread_state = true;
@@ -77,12 +94,26 @@ void Alarm::start()
 
 void Alarm::stop()
 {
+	/* do not change state if thread is not started */
 	if(thread_state) {
-		std::cout << "cancel thread..." << std::endl;
+		std::cout << "snooze..." << std::endl;
+		/* unlock to stop ringing */
+		pthread_spin_unlock(&lock);
+	}
+}
+
+void Alarm::terminate()
+{
+	if(thread_state) {
+		std::cout << "term thread..." << std::endl;
+		/* stop ringtone */
 		sound.stop();
 		sound.resetBuffer();
+
+		/* set thread state to false, cancel thread, unlock spin lock */
 		thread_state = false;
 		pthread_cancel(thread);
 		pthread_spin_unlock(&lock);
+
 	}
 }
