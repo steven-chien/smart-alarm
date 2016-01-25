@@ -24,11 +24,12 @@
 #include "Alarm.hpp"
 //#include <SFML/Audio.hpp>
 
-Alarm::Alarm(time_t ring)
+Alarm::Alarm(time_t ring, int repeat_cycle)
 {
 	thread_state = false;
 	id = ring;
 	wake_time = ring;
+	cycle = repeat_cycle;
 	pthread_spin_init(&lock, PTHREAD_PROCESS_PRIVATE);
 	//sound = new sf::Sound();
 	//buffer = new sf::SoundBuffer();
@@ -51,6 +52,8 @@ void Alarm::set(time_t wake_time)
 void *Alarm::wake(void *args)
 {
 	Alarm *alarm = (Alarm*)args;
+	alarm->prev_wake = alarm->wake_time;
+	bool first_ring = true;
 
 	while(true) {
 		/* prepare for sleep */
@@ -62,38 +65,41 @@ void *Alarm::wake(void *args)
 		std::cout << "going to sleep: " << sleep.tv_sec << std::endl;
 		clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &sleep, NULL);
 
+		/* if movement detected during snooze period, stop, do not activate if it's the 1st ring */
+		FILE *in;
+		char buff[512];
+		in = popen("cat /tmp/raw_state.dat | tail -n50 | paste -sd+ | bc", "r");
+		fgets(buff, sizeof(buff), in);
+		pclose(in);
+		if(atoi(buff)>5 && first_ring==false) {
+			alarm->wake_time = alarm->prev_wake + alarm->cycle;
+			
+			std::cout << "Movement detected, stop alarm, next wake " << alarm->wake_time << std::endl;
+			first_ring = true;
+			continue;
+		}
+		if(first_ring==true)
+			alarm->prev_wake = alarm->wake_time;
+
 		/* sleep period ended, start ringing and wait for unlock */
 		std::cout << "ringing..." << std::endl;
 		//alarm->sound->play();
-		system("canberra-gtk-play --file=ringtone.ogg --loop 1000 &");
+		//system("canberra-gtk-play --file=ringtone.ogg --loop 1000 &");
+		system("omxplayer --loop ringtone.ogg > /dev/null 2>&1 &");
 		pthread_spin_lock(&(alarm->lock));
 
 		/* unlocked, stop ringing and schedule for next wakeup */
 		//alarm->sound->stop();
-		system("pkill -f canberra-gtk-play");
+		system("pkill -f omxplayer");
+		first_ring = false;
 
+		/* snooze period */
 		time_t now;
 		time(&now);
 		alarm->wake_time = now + 15;
 		clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &sleep, NULL);
 
-		/*  Execute SQL statement */
-		char movement_detect;
-		sqlite3_stmt *statement;
-		if(sqlite3_prepare_v2(alarm->db, "select sum(movement) from motion", -1, &statement, 0) == SQLITE_OK) {
-			int cols = sqlite3_column_count(statement);
-			int result = 0;
-			result = sqlite3_step(statement);
-			movement_detect = *((char*)sqlite3_column_text(statement, 0));
-			sqlite3_finalize(statement);
-		}
-		else {
-			std::string error = sqlite3_errmsg(alarm->db);
-			std::cout << "sqlite error " << error << std::endl;
-			std::cout.flush();
-		}
 	}
-	return NULL;
 }
 
 void Alarm::start()
@@ -109,9 +115,6 @@ void Alarm::start()
 		//sound->setBuffer(*buffer);
 		//sound->setLoop(true);
 		
-		/* configure sqlite3 */
-		sqlite3_open("test.db", &db);
-
 		/* lock spin lock and start thread */
 		pthread_spin_lock(&lock);
 		pthread_create(&thread, NULL, wake, this);
@@ -140,6 +143,7 @@ void Alarm::terminate()
 		/* set thread state to false, cancel thread, unlock spin lock */
 		pthread_spin_unlock(&lock);
 		pthread_cancel(thread);
+		system("pkill -f omxplayer");
 		//thread_state = false;
 	}
 }

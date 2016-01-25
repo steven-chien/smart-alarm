@@ -23,7 +23,6 @@
 #include <signal.h>
 #include <onion/onion.h>
 #include <onion/log.h>
-#include <sqlite3.h>
 #include "json/json.h"
 #include "json/json-forwards.h"
 #include "Alarm.hpp"
@@ -65,7 +64,7 @@ int parse_request(void *p, onion_request *req, onion_response *res)
 				std::string wakeup_time(req_time);
 
 				/* perform actions */
-				if(action.compare("new")==0) {
+				if(action.compare("new")==0 && req_repeat!=NULL) {
 					/* check if requested time has passed */
 					if(now > atol(req_time))
 						throw "Requested time smaller than current time!";
@@ -76,7 +75,7 @@ int parse_request(void *p, onion_request *req, onion_response *res)
 						throw "Requested clock does not exist!";
 
 					/* create new alarm clock */
-					alarm = new Alarm(atol(req_time));
+					alarm = new Alarm(atol(req_time), atoi(req_repeat));
 					alarm->start();
 					alarm_clocks[wakeup_time] = alarm;
 					alarm_list.push_back(wakeup_time);
@@ -141,6 +140,10 @@ int parse_request(void *p, onion_request *req, onion_response *res)
 						Json::Value obj;
 						obj["id"] = (*iterator);
 						obj["wakeup"] = Json::Value((int)(alarm->wake_time));
+						if(alarm->wake_time < now)
+							obj["status"] = Json::Value(true);
+						else
+							obj["status"] = Json::Value(false);
 						vec.append(obj);
 					}
 					jobj["alarms"] = vec;

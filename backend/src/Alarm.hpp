@@ -22,7 +22,6 @@
 #include <ctime>
 #include <pthread.h>
 //#include <SFML/Audio.hpp>
-#include <sqlite3.h>
 
 class Alarm
 {
@@ -36,10 +35,11 @@ class Alarm
 		time_t sleep_period;
 		time_t start_time;
 		static void *wake(void*);
-		sqlite3 *db;
+		int cycle;
 	public:
 		time_t wake_time;
-		Alarm(time_t);
+		time_t prev_wake;
+		Alarm(time_t, int);
 		~Alarm();
 		void start();
 		void stop();
