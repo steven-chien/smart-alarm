@@ -1,6 +1,6 @@
 CC=clang++
 LD_PATH=-I/usr/local/bin/
-LD_FLAG=-lpthread -lsfml-audio -lonion
+LD_FLAG=-lpthread -lsfml-audio -lonion -lsqlite3
 STD=-std=c++11
 
 all:

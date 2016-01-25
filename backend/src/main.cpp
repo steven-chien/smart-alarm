@@ -23,6 +23,7 @@
 #include <signal.h>
 #include <onion/onion.h>
 #include <onion/log.h>
+#include <sqlite3.h>
 #include "json/json.h"
 #include "json/json-forwards.h"
 #include "Alarm.hpp"
@@ -51,6 +52,9 @@ int parse_request(void *p, onion_request *req, onion_response *res)
 			/* get parameters */
 			const char *req_time =  onion_request_get_query(req, "time");
 			const char *req_action =  onion_request_get_query(req, "action");
+			const char *req_repeat = onion_request_get_query(req, "repeat");
+
+			/* get current time */
 			time_t now;
 			time(&now);
 

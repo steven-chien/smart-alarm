@@ -71,7 +71,24 @@ void *Alarm::wake(void *args)
 		alarm->sound->stop();
 		time_t now;
 		time(&now);
-		alarm->wake_time = now + 5;
+		alarm->wake_time = now + 15;
+		clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &sleep, NULL);
+
+		/*  Execute SQL statement */
+		char movement_detect;
+		sqlite3_stmt *statement;
+		if(sqlite3_prepare_v2(alarm->db, "select sum(movement) from motion", -1, &statement, 0) == SQLITE_OK) {
+			int cols = sqlite3_column_count(statement);
+			int result = 0;
+			result = sqlite3_step(statement);
+			movement_detect = *((char*)sqlite3_column_text(statement, 0));
+			sqlite3_finalize(statement);
+		}
+		else {
+			std::string error = sqlite3_errmsg(alarm->db);
+			std::cout << "sqlite error " << error << std::endl;
+			std::cout.flush();
+		}
 	}
 	return NULL;
 }
@@ -88,6 +105,9 @@ void Alarm::start()
 		/* configure alarm ringtone */
 		sound->setBuffer(*buffer);
 		sound->setLoop(true);
+		
+		/* configure sqlite3 */
+		sqlite3_open("test.db", &db);
 
 		/* lock spin lock and start thread */
 		pthread_spin_lock(&lock);
