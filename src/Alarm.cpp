@@ -30,13 +30,17 @@ Alarm::Alarm(time_t ring)
 	id = ring;
 	wake_time = ring;
 	pthread_spin_init(&lock, PTHREAD_PROCESS_PRIVATE);
-	if (!buffer.loadFromFile("ringtone.ogg"))
+	sound = new sf::Sound();
+	buffer = new sf::SoundBuffer();
+	if (!buffer->loadFromFile("ringtone.ogg"))
 		exit(1);
 }
 
 Alarm::~Alarm()
 {
-	stop();
+	//stop();
+	delete buffer;
+	delete sound;
 }
 
 void Alarm::set(time_t wake_time)
@@ -60,11 +64,11 @@ void *Alarm::wake(void *args)
 
 		/* sleep period ended, start ringing and wait for unlock */
 		std::cout << "ringing..." << std::endl;
-		alarm->sound.play();
+		alarm->sound->play();
 		pthread_spin_lock(&(alarm->lock));
 
 		/* unlocked, stop ringing and schedule for next wakeup */
-		alarm->sound.stop();
+		alarm->sound->stop();
 		time_t now;
 		time(&now);
 		alarm->wake_time = now + 5;
@@ -82,8 +86,8 @@ void Alarm::start()
 		sleep_period = wake_time - start_time;
 
 		/* configure alarm ringtone */
-		sound.setBuffer(buffer);
-		sound.setLoop(true);
+		sound->setBuffer(*buffer);
+		sound->setLoop(true);
 
 		/* lock spin lock and start thread */
 		pthread_spin_lock(&lock);
@@ -107,13 +111,12 @@ void Alarm::terminate()
 	if(thread_state) {
 		std::cout << "term thread..." << std::endl;
 		/* stop ringtone */
-		sound.stop();
-		sound.resetBuffer();
+		//sound.stop();
+		//sound->resetBuffer();
 
 		/* set thread state to false, cancel thread, unlock spin lock */
-		thread_state = false;
-		pthread_cancel(thread);
 		pthread_spin_unlock(&lock);
-
+		pthread_cancel(thread);
+		//thread_state = false;
 	}
 }

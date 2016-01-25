@@ -18,13 +18,17 @@
 
 #include <iostream>
 #include <unordered_map>
+#include <list>
 #include <unistd.h>
 #include <signal.h>
 #include <onion/onion.h>
 #include <onion/log.h>
+#include "json/json.h"
+#include "json/json-forwards.h"
 #include "Alarm.hpp"
 
 /* data structure for alarm clocks and web server */
+std::list<std::string> alarm_list;
 std::unordered_map<std::string, Alarm*> alarm_clocks;
 onion *o = NULL;
 
@@ -38,64 +42,124 @@ void shutdown_server(int _)
 /* parse HTTP request */
 int parse_request(void *p, onion_request *req, onion_response *res)
 {
+	std::cout.flush();
 	/* get request flag */
 	const onion_request_flags flags = onion_request_get_flags(req);
 
-	/* check if request is get */
-	if((flags & OR_METHODS)==OR_GET) {
-		/* get parameters */
-		const char *req_time =  onion_request_get_query(req, "time");
-		const char *req_action =  onion_request_get_query(req, "action");
+	try {
+		if((flags & OR_METHODS)==OR_GET) {
+			/* get parameters */
+			const char *req_time =  onion_request_get_query(req, "time");
+			const char *req_action =  onion_request_get_query(req, "action");
+			time_t now;
+			time(&now);
 
-		/* check if parameters are present */
-		if(req_time!=NULL && req_action!=NULL) {
-			/* convert c string to std string */
-			std::string action(req_action);
-			std::string wakeup_time(req_time);
-			std::cout << "Received action request: " << action << " at time: " << wakeup_time << std::endl;
-			/* perform actions */
-			if(action.compare("new")==0) {
-				/* check if requested time has passed */
-				time_t now;
-				time(&now);
-				if(now > atol(req_time))
-					goto fail;
+			/* check if parameters are present */
+			if(req_time!=NULL && req_action!=NULL) {
+				/* convert c string to std string */
+				std::string action(req_action);
+				std::string wakeup_time(req_time);
 
-				/* instantiate new alarm and start sleeping */
-				Alarm *alarm = new Alarm(atol(req_time));
-				alarm->start();
-				alarm_clocks[wakeup_time] = alarm;
-			}
-			else if(action.compare("stop")==0) {
-				Alarm *alarm = alarm_clocks[wakeup_time];
-			 	if(alarm==NULL) {
-					std::cout << "Alarm clock " << wakeup_time << " not found!" << std::endl;
-					goto fail;
+				/* perform actions */
+				if(action.compare("new")==0) {
+					/* check if requested time has passed */
+					if(now > atol(req_time))
+						throw "Requested time smaller than current time!";
+
+					/* instantiate new alarm and start sleeping */
+					Alarm *alarm = alarm_clocks[wakeup_time];
+					if(alarm!=NULL)
+						throw "Requested clock does not exist!";
+
+					/* create new alarm clock */
+					alarm = new Alarm(atol(req_time));
+					alarm->start();
+					alarm_clocks[wakeup_time] = alarm;
+					alarm_list.push_back(wakeup_time);
+					alarm_list.sort();
+
+					std::cout << "New alarm created!" << std::endl;
+
+					/* write response */
+					onion_response_printf(res, "<p>Alarm added</p>");
 				}
-				alarm->stop();
-			}
-			else if(action.compare("terminate")==0) {
-				Alarm *alarm = alarm_clocks[wakeup_time];
-		  		if(alarm==NULL) {
-					std::cout << "Alarm clock " << wakeup_time << " not found!" << std::endl;
-					goto fail;
+				else if(action.compare("stop")==0) {
+					/* look for requested alarm and check */
+					Alarm *alarm = alarm_clocks[wakeup_time];
+					if(alarm==NULL) {
+						throw "Alarm not found!";
+					}
+					if(now<alarm->wake_time) {
+						throw "Alarm not ringing, cannot stop!";
+					}
+
+					/* stop alarm */
+					alarm->stop();
+					std::cout << "Alarm " << wakeup_time << " stoped!" << std::endl;
+
+					/* write response */
+					onion_response_printf(res, "<p>Alarm stopped</p>");
 				}
-				alarm->terminate();
-				delete alarm;
-				alarm_clocks[wakeup_time] = NULL;
+				else if(action.compare("terminate")==0) {
+					/* look for requested alarm */
+					Alarm *alarm = alarm_clocks[wakeup_time];
+					if(alarm==NULL) {
+						throw "Requested clock does not exist!";
+					}
+
+					/* cancel thread and delete object */
+					alarm->terminate();
+					delete alarm;
+
+					/* reset data structure */
+					alarm_clocks[wakeup_time] = NULL;
+					alarm_list.remove(wakeup_time);
+					std::cout << "Alarm " << wakeup_time << " terminated!" << std::endl;
+
+					/* write response */
+					onion_response_printf(res, "<p>Alarm deleted</p>");
+				}
+				else {
+					throw "Action not found!";
+				}
+			}
+			else if(req_action!=NULL) {
+				/* convert c string to std string */
+				std::string action(req_action);
+				Json::Value jobj;
+				Json::Value vec(Json::arrayValue);
+
+				/* print list of alarm and send JSON object */
+				if(action.compare("alarmList")==0) {
+					std::list<std::string>::const_iterator iterator;
+					for (iterator = alarm_list.begin(); iterator != alarm_list.end(); ++iterator) {
+						Alarm *alarm = alarm_clocks[(*iterator)];
+						Json::Value obj;
+						obj["id"] = (*iterator);
+						obj["wakeup"] = Json::Value((int)(alarm->wake_time));
+						vec.append(obj);
+					}
+					jobj["alarms"] = vec;
+					Json::FastWriter fastWriter;
+					std::string jsonMsg = fastWriter.write(jobj);
+					onion_response_printf(res, "%s", jsonMsg.c_str());
+				}
+			}
+			else {
+				throw "Acation not found!";
 			}
 		}
-
-		/* write response */
-		onion_response_printf(res, "<p>Client description: %s, %s, %s", onion_request_get_client_description(req), req_action, req_time);
 	}
-	else {
+	catch(char const* err) {
+		std::cout << "Caught error: " << err << std::endl;
 		goto fail;
 	}
+	std::cout.flush();
 	return OCS_PROCESSED;
 fail:
 	onion_response_set_code(res, 400);
 	onion_response_printf(res, "<p>Bad request!");
+	std::cout.flush();
 	return OCS_PROCESSED;
 }
 
