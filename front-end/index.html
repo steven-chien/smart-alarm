@@ -155,6 +155,20 @@
         setInterval(function(){$('#current-time').text(getCurrentDateTime()) }, 1000);
         updateTheme();
         setInterval(function(){updateTheme() }, 600000);
+	//Add new alarm
+	$('#new-alarm-add').click(function(e){
+		var epoch_time = $("#new-alarm-one-time-picker").data("DateTimePicker").date().toDate().getTime() / 1000;
+		$.ajax({type: "GET",
+			async: false,
+			url: "http://localhost:8888/?action=new&time="+epoch_time,
+			dataType: "jsonp",
+			jsonpCallback:"myJsonpCallback",
+			success: function(json){
+				console.log(json.alarms);
+			}
+		});
+		console.log("Click");
+	});
     });
 
     $(document).mousemove(function() {

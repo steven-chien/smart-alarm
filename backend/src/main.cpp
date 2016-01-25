@@ -146,7 +146,7 @@ int parse_request(void *p, onion_request *req, onion_response *res)
 					jobj["alarms"] = vec;
 					Json::FastWriter fastWriter;
 					std::string jsonMsg = fastWriter.write(jobj);
-					onion_response_printf(res, "%s", jsonMsg.c_str());
+					onion_response_printf(res, "myJsonpCallback(%s)", jsonMsg.c_str());
 				}
 			}
 			else {
