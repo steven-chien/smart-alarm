@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Alarm</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap-switch.min.css">
+    <link rel="stylesheet" href="css/bootstrap-datetimepicker.min.css">
+    <script src="js/jquery-1.12.0.min.js"></script>
+    <script src="js/moment.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/bootstrap-switch.min.js"></script>
+    <script src="js/bootstrap-datetimepicker.min.js"></script>
+</head>
+<body>
+<div class="warp container">
+    <div class="row">
+        <div id="clock-warp" class="jumbotron text-center">
+            <h1 id="current-time"></h1>
+            <h3 id="next-alarm"><span class="glyphicon glyphicon-bell" aria-hidden="true"></span> 06:00</h3>
+        </div>
+    </div>
+    <div id="alarm-control" class="row text-center">
+        <button id="new-alarm" class="btn btn-success" data-toggle="modal" data-target="#new-alarm-model">New</button>
+        <button id="manage-alarm" class="btn btn-default" data-toggle="modal" data-target="#manage-alarm-model">Manage</button>
+    </div>
+    <!-- New Alarm Modal -->
+    <div class="modal fade" id="new-alarm-model" tabindex="-1" role="dialog" aria-labelledby="new-alarm-title">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="new-alarm-title">New Alarm</h4>
+                </div>
+                <form class="form-horizontal" role="form">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="control-label col-sm-4" for="new-alarm-label">Label</label>
+                            <div class="col-sm-8">
+                                <input type='text' class="form-control" id='new-alarm-label'/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-sm-4" for="new-alarm-repeat-switch">Repeat</label>
+                            <div class="col-sm-8">
+                                <input type="checkbox" id="new-alarm-repeat-switch" checked>
+                            </div>
+                        </div>
+                        <div id="new-alarm-one-time">
+                            <div class="form-group">
+                                <label class="control-label col-sm-4" for="new-alarm-one-time-picker">Date & Time</label>
+                                <div class="col-sm-8">
+                                    <input type='text' class="form-control" id='new-alarm-one-time-picker' />
+                                </div>
+                            </div>
+                        </div>
+                        <div id="new-alarm-repeat">
+                            <div class="form-group">
+                                <label class="control-label col-sm-4" for="new-alarm-repeat-picker">Time</label>
+                                <div class="col-sm-8">
+                                    <input type='text' class="form-control" id='new-alarm-repeat-picker' />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label col-sm-4" for="new-alarm-repeat-weekday-picker">Weekday</label>
+                                <div class="col-sm-8">
+                                    <div class="btn-group" role="group" id="new-alarm-repeat-weekday-picker" data-toggle="buttons">
+                                        <label class="btn btn-default"><input type="checkbox" autocomplete="off">Sun</label>
+                                        <label class="btn btn-default"><input type="checkbox" autocomplete="off">Mon</label>
+                                        <label class="btn btn-default"><input type="checkbox" autocomplete="off">Tue</label>
+                                        <label class="btn btn-default"><input type="checkbox" autocomplete="off">Wed</label>
+                                        <label class="btn btn-default"><input type="checkbox" autocomplete="off">Thu</label>
+                                        <label class="btn btn-default"><input type="checkbox" autocomplete="off">Fri</label>
+                                        <label class="btn btn-default"><input type="checkbox" autocomplete="off">Sat</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-sm-4" for="new-alarm-repeat-alarming">Repeat Alarming</label>
+                            <div class="col-sm-8">
+                                <input type='number' class="form-control" id='new-alarm-repeat-alarming' value="0"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-sm-4" for="new-alarm-repeat-interval">Separate Interval</label>
+                            <div class="col-sm-8">
+                                <div class="input-group">
+                                    <input type='number' class="form-control" id='new-alarm-repeat-interval' aria-describedby="new-alarm-repeat-interval-span" disabled>
+                                    <span class="input-group-addon" id="new-alarm-repeat-interval-span">mins.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="new-alarm-add">Add</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Manage Alarm Modal -->
+    <div class="modal fade" id="manage-alarm-model" tabindex="-1" role="dialog" aria-labelledby="new-alarm-title">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="manage-alarm-title">Manage Alarm</h4>
+                </div>
+                <form class="form-horizontal" role="form">
+                    <div class="modal-body">
+                        <div class="row alarm-set">
+                            <div class="col-xs-9">
+                                <span class="manage-alarm-title">06:00</span><br>
+                                <span class="manage-alarm-detail">Repeat everyday</span>
+                            </div>
+                            <div class="col-xs-3">
+                                <input type="checkbox" id="alarm-0-switch" checked>
+                                <div class="btn-group alarm-manage-control" role="group" data-toggle="buttons">
+                                    <button class="btn btn-link btn-sm">Edit</button>
+                                    <button class="btn btn-link btn-sm">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row alarm-set">
+                            <div class="col-xs-9">
+                                <span class="manage-alarm-title">08:00</span><br>
+                                <span class="manage-alarm-detail">Repeat on every Monday and Tuesday</span>
+                            </div>
+                            <div class="col-xs-3">
+                                <input type="checkbox" id="alarm-1-switch" checked>
+                                <div class="btn-group alarm-manage-control" role="group" data-toggle="buttons">
+                                    <button class="btn btn-link btn-sm">Edit</button>
+                                    <button class="btn btn-link btn-sm">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                    </div>
+                    <div class="modal-footer">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+<script>
+    var mouseMove;
+    $(document).ready(function(){
+        $('#current-time').text(getCurrentDateTime());
+        setInterval(function(){$('#current-time').text(getCurrentDateTime()) }, 1000);
+        updateTheme();
+        setInterval(function(){updateTheme() }, 600000);
+    });
+
+    $(document).mousemove(function() {
+        $( "#alarm-control" ).fadeIn();
+        clearInterval(mouseMove);
+        mouseMove = setTimeout(function() {$( "#alarm-control" ).fadeOut();}, 5000)
+    });
+    $(document).on('mouseleave', function() {
+        $( "#alarm-control" ).fadeOut();
+        clearInterval(mouseMove);
+    });
+
+    function getCurrentDateTime() {
+        var current = new Date();
+        return ("00" + current.getHours()).substr(-2) + ':' + ("00" + current.getMinutes()).substr(-2) + ':' + ("00" + current.getSeconds()).substr(-2);
+    }
+
+    function updateTheme() {
+        var current = new Date();
+        if(current.getHours() > 6 && current.getHours() < 18) {
+            //Day
+            $('body').css('background-color', 'rgb(247,248,249)');
+            $('#clock-warp').css('color', 'rgb(60,60,61)');
+        } else {
+            //Night
+            $('body').css('background-color', 'rgb(60,60,61)');
+            $('#clock-warp').css('color', 'rgb(247,248,249)');
+        }
+    }
+
+    $('#new-alarm-repeat-switch').bootstrapSwitch();
+    $('#new-alarm-repeat-switch').on('switchChange.bootstrapSwitch', function(event, state) {
+        if(state) {
+            $( "#new-alarm-one-time" ).fadeOut('slow', function() {$( "#new-alarm-repeat" ).fadeIn();});
+        } else {
+            $( "#new-alarm-repeat" ).fadeOut('slow', function() {$( "#new-alarm-one-time" ).fadeIn();});
+        }
+    });
+    $('#new-alarm-one-time-picker').datetimepicker({sideBySide: true});
+    $('#new-alarm-repeat-picker').datetimepicker({format: 'LT'});
+    $('#new-alarm-repeat-alarming').on('change', function() {
+        if($(this).val() > 0) {
+            $('#new-alarm-repeat-interval').removeAttr('disabled');
+            $('#new-alarm-repeat-interval').attr('value', '1');
+        } else {
+            $('#new-alarm-repeat-interval').attr('disabled', 'disabled');
+        }
+    })
+
+    //Manage Alarm Test
+    $('#alarm-0-switch').bootstrapSwitch();
+    $('#alarm-1-switch').bootstrapSwitch();
+</script>
+<style>
+    body, h1, h2, h3, h4, h5, h6{
+        font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+        font-weight:100;
+    }
+    #new-alarm-one-time, #alarm-control{
+        display: none;
+    }
+    #clock-warp{
+        margin-top: 30vh;
+        background-color: rgba(200,200,200,0.5);
+    }
+    .manage-alarm-title{
+        font-size: 30px;
+    }
+    .manage-alarm-detail{
+        font-size: 12px;
+        color: rgb(150,150,150);
+    }
+    .alarm-set{
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
+    .alarm-set:hover, .alarm-set:focus{
+        background-color: rgb(230,230,231);
+    }
+    .alarm-manage-control{
+        margin-top: 10px;
+    }
+</style>
