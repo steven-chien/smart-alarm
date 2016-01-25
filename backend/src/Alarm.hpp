@@ -21,7 +21,7 @@
 #include <thread>
 #include <ctime>
 #include <pthread.h>
-#include <SFML/Audio.hpp>
+//#include <SFML/Audio.hpp>
 #include <sqlite3.h>
 
 class Alarm
@@ -29,8 +29,8 @@ class Alarm
 	private:
 		pthread_t thread;
 		bool thread_state;
-		sf::SoundBuffer *buffer;
-		sf::Sound *sound;
+		//sf::SoundBuffer *buffer;
+		//sf::Sound *sound;
 		pthread_spinlock_t lock;
 		long int id;
 		time_t sleep_period;

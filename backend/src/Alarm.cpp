@@ -22,7 +22,7 @@
 #include <time.h>
 #include <unistd.h>
 #include "Alarm.hpp"
-#include <SFML/Audio.hpp>
+//#include <SFML/Audio.hpp>
 
 Alarm::Alarm(time_t ring)
 {
@@ -30,17 +30,17 @@ Alarm::Alarm(time_t ring)
 	id = ring;
 	wake_time = ring;
 	pthread_spin_init(&lock, PTHREAD_PROCESS_PRIVATE);
-	sound = new sf::Sound();
-	buffer = new sf::SoundBuffer();
-	if (!buffer->loadFromFile("ringtone.ogg"))
-		exit(1);
+	//sound = new sf::Sound();
+	//buffer = new sf::SoundBuffer();
+	//if (!buffer->loadFromFile("ringtone.ogg"))
+	//	exit(1);
 }
 
 Alarm::~Alarm()
 {
 	//stop();
-	delete buffer;
-	delete sound;
+	//delete buffer;
+	//delete sound;
 }
 
 void Alarm::set(time_t wake_time)
@@ -64,11 +64,14 @@ void *Alarm::wake(void *args)
 
 		/* sleep period ended, start ringing and wait for unlock */
 		std::cout << "ringing..." << std::endl;
-		alarm->sound->play();
+		//alarm->sound->play();
+		system("canberra-gtk-play --file=ringtone.ogg --loop 1000 &");
 		pthread_spin_lock(&(alarm->lock));
 
 		/* unlocked, stop ringing and schedule for next wakeup */
-		alarm->sound->stop();
+		//alarm->sound->stop();
+		system("pkill -f canberra-gtk-play");
+
 		time_t now;
 		time(&now);
 		alarm->wake_time = now + 15;
@@ -103,8 +106,8 @@ void Alarm::start()
 		sleep_period = wake_time - start_time;
 
 		/* configure alarm ringtone */
-		sound->setBuffer(*buffer);
-		sound->setLoop(true);
+		//sound->setBuffer(*buffer);
+		//sound->setLoop(true);
 		
 		/* configure sqlite3 */
 		sqlite3_open("test.db", &db);
