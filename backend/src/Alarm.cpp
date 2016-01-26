@@ -3,7 +3,7 @@
  *
  *       Filename:  alarm.cpp
  *
- *    Description:  
+ *    Description:  Alarm object handling timed sleep and motion detection check
  *
  *        Version:  1.0
  *        Created:  01/24/2016 04:46:17 PM
@@ -22,7 +22,6 @@
 #include <time.h>
 #include <unistd.h>
 #include "Alarm.hpp"
-//#include <SFML/Audio.hpp>
 
 Alarm::Alarm(time_t ring, int repeat_cycle)
 {

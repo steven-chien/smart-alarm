@@ -3,7 +3,7 @@
  *
  *       Filename:  main.cpp
  *
- *    Description:  
+ *    Description:  main server loop handling HTTP requests and storing alarms
  *
  *        Version:  1.0
  *        Created:  01/24/2016 04:53:47 PM
