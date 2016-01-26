@@ -132,7 +132,7 @@ int parse_request(void *p, onion_request *req, onion_response *res)
 				Json::Value jobj;
 				Json::Value vec(Json::arrayValue);
 
-				/* print list of alarm and send JSON object */
+				/* print list of alarm and append to JSON array */
 				if(action.compare("alarmList")==0) {
 					std::list<std::string>::const_iterator iterator;
 					for (iterator = alarm_list.begin(); iterator != alarm_list.end(); ++iterator) {
@@ -146,9 +146,13 @@ int parse_request(void *p, onion_request *req, onion_response *res)
 							obj["status"] = Json::Value(false);
 						vec.append(obj);
 					}
+
+					/* seralize object and write response */
 					jobj["alarms"] = vec;
 					Json::FastWriter fastWriter;
 					std::string jsonMsg = fastWriter.write(jobj);
+
+					/* write response */
 					onion_response_printf(res, "myJsonpCallback(%s)", jsonMsg.c_str());
 				}
 			}
@@ -173,13 +177,13 @@ fail:
 int main(int argc, char *argv[])
 {
 	/* install signal handlers for shutdown */
-	signal(SIGINT,shutdown_server);
-	signal(SIGTERM,shutdown_server);
+	signal(SIGINT, shutdown_server);
+	signal(SIGTERM, shutdown_server);
 
 	/* configure new server */
 	o=onion_new(O_POOL);
 	onion_set_timeout(o, 5000);
-	onion_set_hostname(o,"0.0.0.0");
+	onion_set_hostname(o, "0.0.0.0");
 	onion_set_port(o, "8888");
 	onion_url *urls=onion_root_url(o);
 
