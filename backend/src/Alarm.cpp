@@ -129,6 +129,6 @@ void Alarm::terminate()
 		/* set thread state to false, cancel thread, unlock spin lock */
 		pthread_spin_unlock(&lock);
 		pthread_cancel(thread);
-		sprintf(kill_cmd, "pkill -f \"ogg123 ringtone.ogg --repeat %ld\"", alarm->id);
+		sprintf(kill_cmd, "pkill -f \"ogg123 ringtone.ogg --repeat %ld\"", id);
 	}
 }
