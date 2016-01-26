@@ -31,17 +31,11 @@ Alarm::Alarm(time_t ring, int repeat_cycle)
 	wake_time = ring;
 	cycle = repeat_cycle;
 	pthread_spin_init(&lock, PTHREAD_PROCESS_PRIVATE);
-	//sound = new sf::Sound();
-	//buffer = new sf::SoundBuffer();
-	//if (!buffer->loadFromFile("ringtone.ogg"))
-	//	exit(1);
 }
 
 Alarm::~Alarm()
 {
-	//stop();
-	//delete buffer;
-	//delete sound;
+
 }
 
 void Alarm::set(time_t wake_time)
@@ -83,20 +77,21 @@ void *Alarm::wake(void *args)
 
 		/* sleep period ended, start ringing and wait for unlock */
 		std::cout << "ringing..." << std::endl;
-		//alarm->sound->play();
-		//system("canberra-gtk-play --file=ringtone.ogg --loop 1000 &");
-		system("omxplayer --loop ringtone.ogg > /dev/null 2>&1 &");
+		char cmd[512];
+		sprintf(cmd, "ogg123 ringtone.ogg --repeat %ld > /dev/null 2>&1 &", alarm->wake_time);
+		system(cmd);
 		pthread_spin_lock(&(alarm->lock));
 
 		/* unlocked, stop ringing and schedule for next wakeup */
-		//alarm->sound->stop();
-		system("pkill -f omxplayer");
+		char kill_cmd[1024];
+		sprintf(kill_cmd, "pkill -f \"%s\"", cmd);
+		system(kill_cmd);
 		first_ring = false;
 
 		/* snooze period */
 		time_t now;
 		time(&now);
-		alarm->wake_time = now + 15;
+		alarm->wake_time = now + 300;
 		clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &sleep, NULL);
 
 	}
@@ -110,10 +105,6 @@ void Alarm::start()
 		/* define sleep period */
 		time(&start_time);
 		sleep_period = wake_time - start_time;
-
-		/* configure alarm ringtone */
-		//sound->setBuffer(*buffer);
-		//sound->setLoop(true);
 		
 		/* lock spin lock and start thread */
 		pthread_spin_lock(&lock);
@@ -136,14 +127,8 @@ void Alarm::terminate()
 {
 	if(thread_state) {
 		std::cout << "term thread..." << std::endl;
-		/* stop ringtone */
-		//sound.stop();
-		//sound->resetBuffer();
-
 		/* set thread state to false, cancel thread, unlock spin lock */
 		pthread_spin_unlock(&lock);
 		pthread_cancel(thread);
-		system("pkill -f omxplayer");
-		//thread_state = false;
 	}
 }
