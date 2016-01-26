@@ -78,13 +78,13 @@ void *Alarm::wake(void *args)
 		/* sleep period ended, start ringing and wait for unlock */
 		std::cout << "ringing..." << std::endl;
 		char cmd[512];
-		sprintf(cmd, "ogg123 ringtone.ogg --repeat %ld > /dev/null 2>&1 &", alarm->wake_time);
+		sprintf(cmd, "ogg123 ringtone.ogg --repeat %ld > /dev/null 2>&1 &", alarm->id);
 		system(cmd);
 		pthread_spin_lock(&(alarm->lock));
 
 		/* unlocked, stop ringing and schedule for next wakeup */
-		char kill_cmd[1024];
-		sprintf(kill_cmd, "pkill -f \"%s\"", cmd);
+		char kill_cmd[512];
+		sprintf(kill_cmd, "pkill -f \"ogg123 ringtone.ogg --repeat %ld\"", alarm->id);
 		system(kill_cmd);
 		first_ring = false;
 
@@ -130,5 +130,6 @@ void Alarm::terminate()
 		/* set thread state to false, cancel thread, unlock spin lock */
 		pthread_spin_unlock(&lock);
 		pthread_cancel(thread);
+		sprintf(kill_cmd, "pkill -f \"ogg123 ringtone.ogg --repeat %ld\"", alarm->id);
 	}
 }
