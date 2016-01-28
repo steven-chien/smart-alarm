@@ -1,10 +1,10 @@
 import sqlite3 as lite
 import time
-import random
 import string
 import os
 
 import cherrypy
+import json
 
 class StringGenerator(object):
 
@@ -30,9 +30,9 @@ class StringGenerator(object):
 		except Exception as e:
 			print e
 			cherrypy.response.status = 500
-			return '<p>'+str(e)+'</p>'
+			return 'myJsonpCallback({ \"error\":\"'+str(e)+'\")'
 
-		return str(req_time)
+		return 'myJsonpCallbcak({ \"status\": \"success\" })'
 
 	@cherrypy.expose
 	def delete(self, req_time=123):
@@ -46,7 +46,8 @@ class StringGenerator(object):
 		except Exception as e:
 			print e
 			cherrypy.response.status = 500
-			return '<p>'+str(e)+'</p>'
+			return 'myJsonpCallback({ \"error\":\"'+str(e)+'\")'
+		return 'myJsonpCallbcak({ \"status\": \"success\" })'
 
 	@cherrypy.expose
 	def stop(self, req_time=123):
@@ -70,7 +71,8 @@ class StringGenerator(object):
 		except Exception as e:
 			print e
 			cherrypy.response.status = 500
-			return '<p>'+str(e)+'</p>'
+			return 'myJsonpCallback({ \"error\":\"'+str(e)+'\")'
+		return 'myJsonpCallbcak({ \"status\": \"success\" })'
 
 	@cherrypy.expose
 	def terminate(self, req_time=123):
@@ -85,9 +87,36 @@ class StringGenerator(object):
 		except Exception as e:
 			print e
 			cherrypy.response.status = 500
-			return '<p>'+str(e)+'</p>'
-
-
+			return 'myJsonpCallback({ \"error\":\"'+str(e)+'\")'
+		return 'myJsonpCallbcak({ \"status\": \"success\" })'
+	
+	@cherrypy.expose
+	def alarmList(self):
+		try:
+			con = lite.connect('alarms.db')
+			cur = con.cursor()
+			cur.execute('select A.alarm_id, A.wake, A.cycle, S.ringing from alarms as A, status as S where S.alarm_id=A.alarm_id order by A.wake')
+			rows = cur.fetchall()
+			data = {}
+			alarms = []
+			for row in rows:
+				item = {}
+				item['alarm_id'] = row[0]
+				item['wake'] = row[1]
+				item['cycle'] = row[2]
+				if int(row[3]) == 1:
+					item['status'] = True
+				elif int(row[3]) ==0:
+					item['status'] = False
+				alarms.append(item)
+			data['alarms'] = alarms
+			print str(data)
+			return 'myJsonpCallback('+json.dumps(data)+')'
+		except Exception as e:
+			print e
+			cherrypy.response.status = 500
+			return 'myJsonpCallback({ \"error\":\"'+str(e)+'\")'
+		return 'myJsonpCallbcak({ \"status\": \"success\" })'
 
 if __name__ == '__main__':
 	cherrypy.quickstart(StringGenerator())
