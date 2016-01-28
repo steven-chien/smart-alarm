@@ -12,7 +12,8 @@
     <script src="js/bootstrap-switch.min.js"></script>
     <script src="js/bootstrap-datetimepicker.min.js"></script>
     <script type="text/javascript">
-        var server = "158.132.255.23:8888";
+        //var server = "158.132.255.23:8080";
+        var server = "127.0.0.1:8080";
     </script>
 </head>
 <body>
@@ -174,12 +175,15 @@
         if($('#newalarm').val()==""){
         }
         else{
-        var newalarm = $('#newalarm').val(),
-        newalarmArr = newalarm.split('/'),
-        epoch_time = new Date(newalarmArr[1] + "-" + newalarmArr[0] + "-" + newalarmArr[2]).getTime(); 
+        var newalarm = $('#newalarm').val();
+        newalarmArr = newalarm.split('/');
+	console.log(newalarmArr[1] + "-" + newalarmArr[0] + "-" + newalarmArr[2]);
+        epoch_time = new Date(newalarmArr[1] + "/" + newalarmArr[0] + "/" + newalarmArr[2]).getTime(); 
+	epoch_time = epoch_time/1000.0;
+	//console.log({}.toString.call(epoch_time).split(' ')[1].slice(0, -1).toLowerCase());
 		$.ajax({type: "GET",
 			async: false,
-			url: "http://"+server+"/?action=new&repeat=60&time="+epoch_time,
+			url: "http://"+server+"/new?req_time="+epoch_time+"&repeat=300",
 			dataType: "jsonp",
 			jsonpCallback:"myJsonpCallback",
 			success: function(json){
@@ -202,30 +206,31 @@
         clearInterval(mouseMove);
     });
     function getAlarmList(){
-        var url = "http://"+server+"/?action=alarmList";
+        var url = "http://"+server+"/alarmList";
         $.ajax({type: "GET",
             async: false,
             url: url,
             dataType: "jsonp",
             jsonpCallback:"myJsonpCallback",
             success: function(json){
-                var d = new Date(parseInt(json.alarms[0].id));
+                var d = new Date(parseInt(json.alarms[0].wake)*1000);
                 var snooze = "";
                 if(json.alarms[0].status){
                     snooze = "<br><br><button type=\"button\" class=\"btn btn-danger\" onclick=\"snooze("+json.alarms[0].id+")\">Snooze</button>";
                 }
-                $('#next-alarm').html('<span class="glyphicon glyphicon-bell" aria-hidden="true"></span> '+formatDate(d)+snooze);
+		if(d)
+	                $('#next-alarm').html('<span class="glyphicon glyphicon-bell" aria-hidden="true"></span> '+formatDate(d)+snooze);
                 var fullAlarmList = "";
                 for(var i=0;i<json.alarms.length;i++){
-                    d = new Date(parseInt(json.alarms[i].id));
-                    fullAlarmList += "<div class=\"row alarm-set\"><div class=\"col-xs-9\"><span class=\"manage-alarm-title\">"+formatDate(d)+"</span></div></div><br><hr>";
+                    d = new Date(parseInt(json.alarms[i].wake)*1000);
+		    fullAlarmList += "<div class=\"row alarm-set\"><div class=\"col-xs-9\"><span class=\"manage-alarm-title\">"+formatDate(d)+"</span></div><button type=\"button\" class=\"btn btn-danger\" onclick=\"drop("+json.alarms[i].id+")\">Remove</button></div><hr>";
                 }
                 $('#fullAlarmList').html(fullAlarmList);
             }
         });
     }
     function snooze(id){
-        var url = "http://"+server+"/?action=stop&time="+id;
+        var url = "http://"+server+"/stop?req_time="+id;
         $.ajax({type: "GET",
             async: false,
             url: url,
@@ -236,6 +241,19 @@
             }
         });
     }
+    function drop(id){
+        var url = "http://"+server+"/delete?req_time="+id;
+        $.ajax({type: "GET",
+            async: false,
+            url: url,
+            dataType: "jsonp",
+            jsonpCallback:"myJsonpCallback",
+            success: function(json){
+                console.log("delete");
+            }
+        });
+    }
+
     function formatDate(d) 
     {
         return d.getMonth() + 1 + '/' + d.getDate() + '/' + d.getFullYear() + " " + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();

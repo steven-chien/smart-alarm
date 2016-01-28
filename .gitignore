@@ -33,3 +33,6 @@
 
 #sqlite db
 *.db
+
+#IDE tmp
+*.idea
