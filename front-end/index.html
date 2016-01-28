@@ -11,13 +11,16 @@
     <script src="js/bootstrap.min.js"></script>
     <script src="js/bootstrap-switch.min.js"></script>
     <script src="js/bootstrap-datetimepicker.min.js"></script>
+    <script type="text/javascript">
+        var server = "158.132.255.23:8888";
+    </script>
 </head>
 <body>
 <div class="warp container">
     <div class="row">
         <div id="clock-warp" class="jumbotron text-center">
             <h1 id="current-time"></h1>
-            <h3 id="next-alarm"><span class="glyphicon glyphicon-bell" aria-hidden="true"></span> 06:00</h3>
+            <h3 id="next-alarm"></h3>
         </div>
     </div>
     <div id="alarm-control" class="row text-center">
@@ -35,6 +38,20 @@
                 <form class="form-horizontal" role="form">
                     <div class="modal-body">
                         <div class="form-group">
+                            <label class="control-label col-sm-4" for="new-alarm-one-time-picker">Date Time</label>
+                            <div class='input-group date col-sm-6' id='new-alarm-one-time-picker'>
+                                <input type='text' class="form-control" id="newalarm" required/>
+                            </div>
+                        </div>
+                        <script type="text/javascript">
+                            $(function () {
+                                $('#newalarm').datetimepicker({
+                                    format : 'DD/MM/YYYY HH:mm'
+                                });
+                            });
+                        </script>
+
+                    <!--    <div class="form-group">
                             <label class="control-label col-sm-4" for="new-alarm-label">Label</label>
                             <div class="col-sm-8">
                                 <input type='text' class="form-control" id='new-alarm-label'/>
@@ -90,8 +107,10 @@
                                     <span class="input-group-addon" id="new-alarm-repeat-interval-span">mins.</span>
                                 </div>
                             </div>
-                        </div>
+                        </div>-->
                     </div>
+
+
                     <div class="modal-footer">
                         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                         <button type="button" class="btn btn-primary" id="new-alarm-add">Add</button>
@@ -109,19 +128,12 @@
                     <h4 class="modal-title" id="manage-alarm-title">Manage Alarm</h4>
                 </div>
                 <form class="form-horizontal" role="form">
-                    <div class="modal-body">
-                        <div class="row alarm-set">
+                    <div class="modal-body" id="fullAlarmList">
+                        <!--<div class="row alarm-set">
                             <div class="col-xs-9">
                                 <span class="manage-alarm-title">06:00</span><br>
-                                <span class="manage-alarm-detail">Repeat everyday</span>
                             </div>
-                            <div class="col-xs-3">
-                                <input type="checkbox" id="alarm-0-switch" checked>
-                                <div class="btn-group alarm-manage-control" role="group" data-toggle="buttons">
-                                    <button class="btn btn-link btn-sm">Edit</button>
-                                    <button class="btn btn-link btn-sm">Remove</button>
-                                </div>
-                            </div>
+
                         </div>
                         <hr>
                         <div class="row alarm-set">
@@ -138,7 +150,7 @@
                             </div>
                         </div>
                         <hr>
-                    </div>
+                    </div>-->
                     <div class="modal-footer">
                     </div>
                 </form>
@@ -153,14 +165,21 @@
     $(document).ready(function(){
         $('#current-time').text(getCurrentDateTime());
         setInterval(function(){$('#current-time').text(getCurrentDateTime()) }, 1000);
+        setInterval(function(){getAlarmList()}, 1000);
         updateTheme();
         setInterval(function(){updateTheme() }, 600000);
 	//Add new alarm
 	$('#new-alarm-add').click(function(e){
-		var epoch_time = $("#new-alarm-one-time-picker").data("DateTimePicker").date().toDate().getTime() / 1000;
+		//var epoch_time = $("#new-alarm-one-time-picker").data("DateTimePicker").date().toDate().getTime() / 1000;
+        if($('#newalarm').val()==""){
+        }
+        else{
+        var newalarm = $('#newalarm').val(),
+        newalarmArr = newalarm.split('/'),
+        epoch_time = new Date(newalarmArr[1] + "-" + newalarmArr[0] + "-" + newalarmArr[2]).getTime(); 
 		$.ajax({type: "GET",
 			async: false,
-			url: "http://localhost:8888/?action=new&time="+epoch_time,
+			url: "http://"+server+"/?action=new&repeat=60&time="+epoch_time,
 			dataType: "jsonp",
 			jsonpCallback:"myJsonpCallback",
 			success: function(json){
@@ -168,6 +187,8 @@
 			}
 		});
 		console.log("Click");
+        $('#new-alarm-model').modal('toggle');//show home page
+       }
 	});
     });
 
@@ -180,7 +201,46 @@
         $( "#alarm-control" ).fadeOut();
         clearInterval(mouseMove);
     });
+    function getAlarmList(){
+        var url = "http://"+server+"/?action=alarmList";
+        $.ajax({type: "GET",
+            async: false,
+            url: url,
+            dataType: "jsonp",
+            jsonpCallback:"myJsonpCallback",
+            success: function(json){
+                var d = new Date(parseInt(json.alarms[0].id));
+                var snooze = "";
+                if(json.alarms[0].status){
+                    snooze = "<br><br><button type=\"button\" class=\"btn btn-danger\" onclick=\"snooze("+json.alarms[0].id+")\">Snooze</button>";
+                }
+                $('#next-alarm').html('<span class="glyphicon glyphicon-bell" aria-hidden="true"></span> '+formatDate(d)+snooze);
+                var fullAlarmList = "";
+                for(var i=0;i<json.alarms.length;i++){
+                    d = new Date(parseInt(json.alarms[i].id));
+                    fullAlarmList += "<div class=\"row alarm-set\"><div class=\"col-xs-9\"><span class=\"manage-alarm-title\">"+formatDate(d)+"</span></div></div><br><hr>";
+                }
+                $('#fullAlarmList').html(fullAlarmList);
+            }
+        });
+    }
+    function snooze(id){
+        var url = "http://"+server+"/?action=stop&time="+id;
+        $.ajax({type: "GET",
+            async: false,
+            url: url,
+            dataType: "jsonp",
+            jsonpCallback:"myJsonpCallback",
+            success: function(json){
+                console.log("snooze");
+            }
+        });
+    }
+    function formatDate(d) 
+    {
+        return d.getMonth() + 1 + '/' + d.getDate() + '/' + d.getFullYear() + " " + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
 
+    }
     function getCurrentDateTime() {
         var current = new Date();
         return ("00" + current.getHours()).substr(-2) + ':' + ("00" + current.getMinutes()).substr(-2) + ':' + ("00" + current.getSeconds()).substr(-2);
