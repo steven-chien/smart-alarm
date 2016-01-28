@@ -41,7 +41,7 @@ Install CherryPi with:
 v0.1
 
 ### License
-Copyright (C) 2016 Anson Kwan, Carson Yan, Steven Chien
+Copyright (C) 2016 Anson Kwan, Carson Yan, Star Poon and Steven Chien
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
