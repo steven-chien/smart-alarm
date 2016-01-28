@@ -30,3 +30,6 @@
 # tmp files
 *.swp
 *~
+
+#sqlite db
+*.db
