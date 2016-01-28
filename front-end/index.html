@@ -211,7 +211,7 @@
             success: function(json){
                 var d = new Date(parseInt(json.alarms[0].id));
                 var snooze = "";
-                if(!json.alarms[0].status){
+                if(json.alarms[0].status){
                     snooze = "<br><br><button type=\"button\" class=\"btn btn-danger\" onclick=\"snooze("+json.alarms[0].id+")\">Snooze</button>";
                 }
                 $('#next-alarm').html('<span class="glyphicon glyphicon-bell" aria-hidden="true"></span> '+formatDate(d)+snooze);
