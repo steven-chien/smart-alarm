@@ -126,24 +126,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/> -->
 <script src="js/bootstrap-switch.min.js"></script>
 <script src="js/bootstrap-datetimepicker.min.js"></script>
 <script>
-    var mouseMove;
-    var server = "127.0.0.1:8080";
+    var mouseMove, myJsonpCallback;
+    var server = '127.0.0.1:8080';
     $(document).ready(function(){
         $('#current-time').text(getCurrentDateTime());
         setInterval(function(){$('#current-time').text(getCurrentDateTime()) }, 1000);
         setInterval(function(){getAlarmList()}, 1000);
         updateTheme();
         setInterval(function(){updateTheme() }, 600000);
-        $('#new-alarm-add-btn').datetimepicker({sideBySide: true});  //Init the Date Time Picker
+        $('#new-alarm-add-btn').datetimepicker({sideBySide: true, minDate: new Date()});  //Init the Date Time Picker
     });
 
     //------ Mouse events ------//
 
     //Manage button effect
     $(document).mousemove(function() {
-        $( "#alarm-control" ).fadeIn();
+        $('#alarm-control').fadeIn();
         clearInterval(mouseMove);
-        mouseMove = setTimeout(function() {$( "#alarm-control" ).fadeOut();}, 5000)
+        mouseMove = setTimeout(function() {$('#alarm-control').fadeOut();}, 5000)
     });
 
     $(document).on('mouseleave', function() {
@@ -153,7 +153,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/> -->
 
     //Add new alarm
     $('#new-alarm-add').click(function(e){
-        if($('#new-alarm-add-btn').val() != "") {
+        if($('#new-alarm-add-btn').val() != '') {
             var timestamp = Date.parse($('#new-alarm-add-btn').val())/1000;
             var current = Date.parse(new Date())/1000;
             if(typeof timestamp == 'number' && timestamp - current > 0) {
@@ -167,26 +167,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/> -->
     //------ Backend AJAX functions ------//
 
     function getAlarmList(){
-        var url = "http://"+server+"/alarmList";
-        $.ajax({type: "GET",
+        var url = 'http://' + server + '/alarmList';
+        $.ajax({type: 'GET',
             async: false,
             url: url,
-            dataType: "jsonp",
-            jsonpCallback:"myJsonpCallback",
+            dataType: 'jsonp',
+            jsonpCallback:'myJsonpCallback',
             success: function(json){
                 if(json.alarms.length != 0) {
                     var d = new Date(parseInt(json.alarms[0].wake) * 1000);
-                    var snooze = "";
+                    var snooze = '';
                     if (json.alarms[0].status) {
-                        snooze = "<br><br><button type=\"button\" class=\"btn btn-danger\" onclick=\"snooze(" + json.alarms[0].id + ")\">Snooze</button>";
+                        snooze = '<br><br><button type="button" class="btn btn-danger" onclick="snooze(' + json.alarms[0].id + ')">Snooze</button>';
                     }
                     if (d) {
                         $('#next-alarm').html('<span class="glyphicon glyphicon-bell" aria-hidden="true"></span> '+formatDate(d)+snooze);
                     }
-                    var fullAlarmList = "";
+                    var fullAlarmList = '';
                     for(var i=0; i<json.alarms.length; i++){
                         d = new Date(parseInt(json.alarms[i].wake)*1000);
-                        fullAlarmList += "<div class=\"row alarm-set\"><div class=\"col-xs-9\"><span class=\"manage-alarm-title\">"+formatDate(d)+"</span></div><button type=\"button\" class=\"btn btn-danger\" onclick=\"drop("+json.alarms[i].id+")\">Remove</button></div><hr>";
+                        fullAlarmList += '<div class="row alarm-set"><div class="col-xs-9"><span class="manage-alarm-title">' + formatDate(d) + '</span></div><button type="button" class="btn btn-danger" onclick="drop(' + json.alarms[i].id + ')">Remove</button></div><hr>';
                     }
                     $('#fullAlarmList').html(fullAlarmList);
                     $('#manage-alarm').css('display', 'inline');
@@ -194,49 +194,48 @@ along with this program.  If not, see <http://www.gnu.org/licenses/> -->
                     $('#next-alarm').empty();
                     $('#fullAlarmList').empty();
                     $('#manage-alarm').css('display', 'none');
-
                 }
             }
         });
     }
 
     function add(timestamp) {
-        $.ajax({type: "GET",
+        $.ajax({type: 'GET',
             async: false,
-            url: "http://"+server+"/new?req_time="+timestamp+"&repeat=300",
-            dataType: "jsonp",
-            jsonpCallback:"myJsonpCallback",
+            url: 'http://' + server + '/new?req_time=' + timestamp + '&repeat=300',
+            dataType: 'jsonp',
+            jsonpCallback:'myJsonpCallbcak',
             success: function(json){
                 console.log(json.alarms);
             }
         });
-        console.log("Click");
+        console.log('Click');
         $('#new-alarm-model').modal('toggle');//show home page
-        $('#new-alarm-add-btn').val("");
+        $('#new-alarm-add-btn').val('');
     }
 
     function snooze(id){
-        var url = "http://"+server+"/stop?req_time="+id;
-        $.ajax({type: "GET",
+        var url = 'http://' + server + '/stop?req_time=' + id;
+        $.ajax({type: 'GET',
             async: false,
             url: url,
-            dataType: "jsonp",
-            jsonpCallback:"myJsonpCallback",
+            dataType: 'jsonp',
+            jsonpCallback:'myJsonpCallback',
             success: function(json){
-                console.log("snooze");
+                console.log('snooze');
             }
         });
     }
 
     function drop(id){
-        var url = "http://"+server+"/delete?req_time="+id;
-        $.ajax({type: "GET",
+        var url = 'http://' + server + '/delete?req_time=' + id;
+        $.ajax({type: 'GET',
             async: false,
             url: url,
-            dataType: "jsonp",
-            jsonpCallback:"myJsonpCallback",
+            dataType: 'jsonp',
+            jsonpCallback:'myJsonpCallback',
             success: function(json){
-                console.log("delete");
+                console.log('delete');
             }
         });
     }
@@ -244,12 +243,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/> -->
     //------ Other Functions ------//
 
     function formatDate(d) {
-        return d.getMonth() + 1 + '/' + d.getDate() + '/' + d.getFullYear() + " " + ("00" + d.getHours()).substr(-2) + ":" + ("00" + d.getMinutes()).substr(-2) + ':' + ("00" + d.getSeconds()).substr(-2);
+        return d.getMonth() + 1 + '/' + d.getDate() + '/' + d.getFullYear() + " " + ('00' + d.getHours()).substr(-2) + ":" + ('00' + d.getMinutes()).substr(-2) + ':' + ('00' + d.getSeconds()).substr(-2);
 
     }
     function getCurrentDateTime() {
         var current = new Date();
-        return ("00" + current.getHours()).substr(-2) + ':' + ("00" + current.getMinutes()).substr(-2) + ':' + ("00" + current.getSeconds()).substr(-2);
+        return ('00' + current.getHours()).substr(-2) + ':' + ('00' + current.getMinutes()).substr(-2) + ':' + ('00' + current.getSeconds()).substr(-2);
     }
 
     function updateTheme() {
