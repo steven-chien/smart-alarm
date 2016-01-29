@@ -34,11 +34,13 @@ con = sqlite3.connect(path+'/alarms.db')
 
 with con:
 
+	# extract alarms
 	cur = con.cursor()    
 	cur.execute('SELECT * FROM alarms')
 	now = int(time.time())
 	rows = cur.fetchall()
 
+	# for each alarm check if alarm should be dispatched
 	for row in rows:
 		alarm_id = int(row[0])
 		prev_wake = int(row[1])
@@ -57,19 +59,19 @@ with con:
 			if int(first_ring)==1:
 				cur.execute('update alarms set prev_wake=wake where alarm_id=?', [str(alarm_id)])
 				con.commit()
-#			elif int(first_ring)==0:
-#				# if the alarm has been snoozed, check motion sensor to see if alarm still required
-#				movements = sum([int(s.strip()) for s in open('/tmp/raw_state.dat').readlines()])
-#				print 'movement: '+str(movements)
-#				if int(movements) > 5:
-#					# TODO implement cycle update
-#					cur.execute('update status set first_ring=1, ringing=0, completed=0 where alarm_id=?', [str(alarm_id)])
-#					cur.execute('update alarms set wake=prev_wake+cycle where alarm_id=?', [str(alarm_id)])
-#					con.commit()
-#					print "movement detected, update alarm wake time"
-#					continue
+			elif int(first_ring)==0:
+				# if the alarm has been snoozed, check motion sensor to see if alarm still required
+				movements = sum([int(s.strip()) for s in open('/tmp/raw_state.dat').readlines()])
+				print 'movement: '+str(movements)
+				if int(movements) > 5:
+					cur.execute('update status set first_ring=1, ringing=0, completed=0 where alarm_id=?', [str(alarm_id)])
+					cur.execute('update alarms set wake=prev_wake+cycle where alarm_id=?', [str(alarm_id)])
+					con.commit()
+					print "movement detected, update alarm wake time"
+					continue
 
 			print "ring "+str(wake)
 			os.system("ogg123 "+path+"/ringtone.ogg --repeat "+str(alarm_id)+" > /dev/null 2>&1 &")
+			os.system("python /home/pi/polyhack-alarm/stop.py > /dev/null 2>&1 &")
 			cur.execute('update status set first_ring=0, ringing=1 where alarm_id=?', [str(alarm_id)])
 			con.commit()
