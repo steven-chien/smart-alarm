@@ -23,7 +23,7 @@ import json
 
 class request_handler(object):
 	_cp_config = {'tools.staticdir.on' : True,
-		'tools.staticdir.dir' : '/home/Steven/Programs/smart-alarm',
+		'tools.staticdir.dir' : os.path.dirname(os.path.abspath(__file__)),
 		'tools.staticdir.index' : 'index.html',
 	}
 
