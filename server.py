@@ -17,9 +17,12 @@ import sqlite3
 import time
 import string
 import os
+import sys
 
 import cherrypy
 import json
+
+path = '/home/pi/smart-alarm'
 
 class request_handler(object):
 	_cp_config = {'tools.staticdir.on' : True,
@@ -37,7 +40,7 @@ class request_handler(object):
 			raise cherrypy.HTTPError(500)
 
 		try:
-			con = sqlite3.connect('alarms.db')
+			con = sqlite3.connect(path+'/alarms.db')
 			cur = con.cursor()    
 			cur.execute('insert into alarms values('+str(alarm_time)+','+str(alarm_time)+','+str(alarm_time)+','+str(repeat)+')')
 			cur.execute('insert into status values('+str(alarm_time)+', 1, 0, 0)')
@@ -54,7 +57,7 @@ class request_handler(object):
 	@cherrypy.expose
 	def delete(self, req_time=123, callback=123, _=123):
 		try:
-			con = sqlite3.connect('alarms.db')
+			con = sqlite3.connect(path+'/alarms.db')
 			cur = con.cursor()
 			cur.execute('delete from alarms where alarm_id=?', [str(req_time)])
 			cur.execute('delete from status where alarm_id=?', [str(req_time)])
@@ -71,7 +74,7 @@ class request_handler(object):
 	@cherrypy.expose
 	def stop(self, req_time=123, callback=123, _=123):
 		try:
-			con = sqlite3.connect('alarms.db')
+			con = sqlite3.connect(path+'/alarms.db')
 			cur = con.cursor()
 
 			# check if alarm is actually ringing
@@ -87,7 +90,7 @@ class request_handler(object):
 			con.close()
 
 			# kill alarm process
-			cmd = "pkill -f \"ogg123 /home/pi/smart-alarm/ringtone.ogg --repeat "+req_time+"\""
+			cmd = "pkill -f \"ogg123 "+path+"/ringtone.ogg --repeat "+req_time+"\""
 			print str(cmd)
 			os.system(cmd)
 
@@ -102,7 +105,7 @@ class request_handler(object):
 	@cherrypy.expose
 	def terminate(self, req_time=123, callback=123, _=123):
 		try:
-			con = sqlite3.connect('alarms.db')
+			con = sqlite3.connect(path+'/alarms.db')
 			cur = con.cursor()
 
 			# update alarm wake to to next cycle, reset status fields
@@ -112,7 +115,7 @@ class request_handler(object):
 			con.close()
 
 			# kill program if matched
-			os.system("pkill -f \"ogg123 /home/pi/smart-alarm/ringtone.ogg --repeat "+req_time+"\"")
+			os.system("pkill -f \"ogg123 "+path+"/ringtone.ogg --repeat "+req_time+"\"")
 		except Exception as e:
 			print e
 			cherrypy.response.status = 500
@@ -124,7 +127,7 @@ class request_handler(object):
 	@cherrypy.expose
 	def alarmList(self, callback=123, _=123):
 		try:
-			con = sqlite3.connect('alarms.db')
+			con = sqlite3.connect(path+'/alarms.db')
 			cur = con.cursor()
 
 			# extract a list of alarm and if they are ringing
@@ -151,9 +154,13 @@ class request_handler(object):
 			return 'myJsonpCallback({ \"error\":\"'+str(e)+'\")'
 
 if __name__ == '__main__':
+	if len(sys.argv)==2:
+		path = str(sys.argv[1])
+		print path
+
 	try:
 		# create tables if not already exist
-		con = sqlite3.connect('alarms.db')
+		con = sqlite3.connect(path+'/alarms.db')
 		cur = con.cursor()
 		cur.execute('create table if not exists status(alarm_id int primary key, first_ring bool, ringing bool, completed bool)')
 		cur.execute('create table if not exists alarms(alarm_id int primary key, prev_wake int, wake int, cycle int)')
