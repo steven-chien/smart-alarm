@@ -19,12 +19,12 @@
 
 # this program should be executed by root crontab (need to read sensor data) once every min. #
 
-import sqsqlite33
+import sqlite3
 import time
 import sys
 import os
 
-con = sqlite3.connect('/home/Steven/Programs/smart-alarm/backend/src/alarms.db')
+con = sqlite3.connect('/home/pi/smart-alarm/alarms.db')
 
 with con:
 
@@ -51,7 +51,7 @@ with con:
 			con.commit()
 		elif first_ring is not 1:
 			# if the alarm has been snoozed, check motion sensor to see if alarm still required
-			movements = sum([int(s.strip()) for s in open('foo.txt').readlines()])
+			movements = sum([int(s.strip()) for s in open('/tmp/raw_state.dat').readlines()])
 			if movements > 5:
 				# TODO implement cycle update
 				continue
@@ -59,6 +59,6 @@ with con:
 		# check if alarm qualify for ringing and media player is not already running
 		if wake < now and not activated:
 			print "ring "+str(wake)
-			os.system("ogg123 /home/Steven/Programs/test_alrm/alarm/ringtone.ogg --repeat "+str(alarm_id)+" > /dev/null 2>&1 &")
+			os.system("ogg123 /home/pi/smart-alarm/ringtone.ogg --repeat "+str(alarm_id)+" > /dev/null 2>&1 &")
 			cur.execute('update status set first_ring=0, ringing=1 where alarm_id=?', [str(alarm_id)])
 			con.commit()

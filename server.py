@@ -87,7 +87,7 @@ class request_handler(object):
 			con.close()
 
 			# kill alarm process
-			cmd = "pkill -f \"ogg123 /home/Steven/Programs/smart-alarm/ringtone.ogg --repeat "+req_time+"\""
+			cmd = "pkill -f \"ogg123 /home/pi/smart-alarm/ringtone.ogg --repeat "+req_time+"\""
 			print str(cmd)
 			os.system(cmd)
 
@@ -112,7 +112,7 @@ class request_handler(object):
 			con.close()
 
 			# kill program if matched
-			os.system("pkill -f \"ogg123 /home/Steven/Programs/smart-alarm/ringtone.ogg --repeat "+req_time+"\"")
+			os.system("pkill -f \"ogg123 /home/pi/smart-alarm/ringtone.ogg --repeat "+req_time+"\"")
 		except Exception as e:
 			print e
 			cherrypy.response.status = 500
