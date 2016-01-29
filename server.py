@@ -163,4 +163,5 @@ if __name__ == '__main__':
 		print e
 
 	# start cherry py to serve http requests
+	cherrypy.config.update({'server.socket_host': '0.0.0.0' })
 	cherrypy.quickstart(request_handler())
